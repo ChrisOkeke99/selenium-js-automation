@@ -1,3 +1,4 @@
+const SecureAreaPage = require("../pages/SecureAreaPage");
 const { By, until } = require("selenium-webdriver");
 const { expect } = require("chai");
 const { buildDriver } = require("./driver");
@@ -11,9 +12,11 @@ describe("Herokuapp Login (Selenium + JS)", function () {
 
   let driver;
   let loginPage;
+  let secureAreaPage;
 
   beforeEach(async () => {
   driver = await buildDriver();
+  secureAreaPage = new SecureAreaPage(driver);
   loginPage = new LoginPage(driver);
   await loginPage.open();
 });
@@ -48,7 +51,20 @@ describe("Herokuapp Login (Selenium + JS)", function () {
   expect(text).to.include("You logged into a secure area!");
 });
 
-  
+
+it("logs out successfully after logging in", async () => {
+  await loginPage.login("tomsmith", "SuperSecretPassword!");
+
+  await secureAreaPage.logout();
+
+  // After logout you should be back on /login
+  await driver.wait(until.urlContains("/login"), 10000);
+
+  const text = await loginPage.getFlashMessage();
+  expect(text).to.include("You logged out of the secure area!");
+});
+
+
 
   it("shows an error message with invalid credentials", async () => {
   await loginPage.login("wronguser", "wrongpassword");
