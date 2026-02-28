@@ -4,14 +4,18 @@ const { buildDriver } = require("./driver");
 
 const fs = require("fs");
 const path = require("path");
+const LoginPage = require("../pages/LoginPage");
 
 describe("Herokuapp Login (Selenium + JS)", function () {
   this.timeout(30000);
 
   let driver;
+  let loginPage;
 
   beforeEach(async () => {
   driver = await buildDriver();
+  loginPage = new LoginPage(driver);
+  await loginPage.open();
 });
 
   afterEach(async function () {
@@ -39,35 +43,16 @@ describe("Herokuapp Login (Selenium + JS)", function () {
 });
 
   it("logs in successfully with valid credentials", async () => {
-    await driver.get("https://the-internet.herokuapp.com/login");
+  await loginPage.login("tomsmith", "SuperSecretPassword!");
+  const text = await loginPage.getFlashMessage();
+  expect(text).to.include("You logged into a secure area!");
+});
 
-    await driver.findElement(By.id("username")).sendKeys("tomsmith");
-    await driver.findElement(By.id("password")).sendKeys("SuperSecretPassword!");
-    await driver.findElement(By.css("button[type='submit']")).click();
-
-    const flash = await driver.wait(
-      until.elementLocated(By.id("flash")),
-      10000
-    );
-
-    const text = await flash.getText();
-    expect(text).to.include("You logged into a secure area!");
-
-  });
+  
 
   it("shows an error message with invalid credentials", async () => {
-    await driver.get("https://the-internet.herokuapp.com/login");
-
-    await driver.findElement(By.id("username")).sendKeys("wronguser");
-    await driver.findElement(By.id("password")).sendKeys("wrongpass");
-    await driver.findElement(By.css("button[type='submit']")).click();
-
-    const flash = await driver.wait(
-      until.elementLocated(By.id("flash")),
-      10000
-    );
-
-    const text = await flash.getText();
-    expect(text).to.include("Your username is invalid!");
-  });
+  await loginPage.login("wronguser", "wrongpassword");
+  const text = await loginPage.getFlashMessage();
+  expect(text).to.include("Your username is invalid!");
+});
 });
